@@ -1,0 +1,19 @@
+{
+  "protocol": "local",
+  "generator": "local",
+  "seeds": [42],
+  "folds": 5,
+  "step_size": 25,
+  "max_samples": 800,
+  "noise_ratio": 0.01,
+  "normalize_oxides": false,
+  "mlp_augmented_alpha_multiplier": 10,
+  "models": {
+    "mlp": {"hidden_layer_sizes": [150, 100, 50, 25], "activation": "tanh", "solver": "adam", "alpha": 0.001, "learning_rate": "adaptive", "learning_rate_init": 0.001, "max_iter": 2000},
+    "svr": {"kernel": "poly", "degree": 3, "coef0": 1.0, "C": 0.1, "epsilon": 0.1, "gamma": "auto"},
+    "rf": {"n_estimators": 300, "max_depth": 8, "max_features": 0.5, "min_samples_leaf": 4, "min_samples_split": 8, "bootstrap": true},
+    "gbdt": {"n_estimators": 100, "learning_rate": 0.1, "max_depth": 2, "min_samples_leaf": 3, "min_samples_split": 15, "subsample": 0.6},
+    "catboost": {"learning_rate": 0.1, "iterations": 200, "depth": 4, "l2_leaf_reg": 1, "subsample": 0.9, "bootstrap_type": "Bernoulli", "random_strength": 10, "min_data_in_leaf": 1},
+    "xgboost": {"max_depth": 3, "learning_rate": 0.1, "n_estimators": 200, "min_child_weight": 1, "subsample": 0.9, "colsample_bytree": 0.8, "gamma": 0.1}
+  }
+}

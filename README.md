@@ -1,100 +1,58 @@
-# NDT 虚拟样本生成项目
+# NDT 虚拟样本生成与热导率预测
 
-根据已有数值型回归数据生成虚拟样本。默认示例使用 66 条原始记录，生成 100 条新记录，以 `TC(W/mK)` 为连续目标、`Saturated` 为类别特征，并排除编号 `No.`。目标列是本项目运行示例的选择，可以通过参数修改。
+Hu 等（2025）论文配套项目的可运行整理版本。论文：An integrated approach for thermal conductivity prediction of grotto sandstone using virtual sample generation and machine learning with limited nondestructive testing data，Measurement 256，118248。DOI：https://doi.org/10.1016/j.measurement.2025.118248。
 
-## 快速开始（Windows PowerShell）
+主要运行程序以本地 TC 项目的六种模型脚本为依据，统一渐进增强、训练、真实预测和指标导出。根目录原始 DATA 和旧函数文件保留作历史参考。
 
-先安装 Python 3.10 或更新版本，解压项目，在包含本文件的目录打开终端：
+## 安装与运行
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m ndt_samples --output generated/first_run.csv
-```
-
-结果为 `generated/first_run.csv`，只包含虚拟记录。交付包另附已生成的 `generated/virtual_samples.csv` 示例。再次运行时需指定新路径：
+Python 3.10 或更新版本，在项目根目录执行（建议先创建虚拟环境）：
 
 ```powershell
-.\.venv\Scripts\python.exe -m ndt_samples --n-virtual 500 --seed 42 --output generated/virtual_500.csv
+python -m pip install -r requirements-models.txt
+python run_experiment.py --model mlp --output runs/mlp_local
 ```
 
-程序不会覆盖已有结果，也不会覆盖输入文件。如果使用已有的 Python 环境，可直接运行 `python -m pip install -r requirements.txt` 和 `python -m ndt_samples --output generated/new_samples.csv`。
-
-## 自定义数据
-
-支持带表头的 CSV 或 TSV，自动检测分隔符。所有参与生成的列应为有限数值，不接受缺失值、无穷值及文本类别。请预先把类别编码成数字，并明确指定类别列。`y` 为连续回归目标，不用于分类标签。
+六种模型快速运行（总训练记录上限为 100）：
 
 ```powershell
-python -m ndt_samples --input data/samples.tsv --target "TC(W/mK)" --categorical Saturated --drop No. --n-virtual 100 --noise-ratio 0.01 --seed 42 --output generated/run2.csv
+python run_experiment.py --model all --max-samples 100 --output runs/six_models
 ```
 
-- `--target`：目标列，默认 `TC(W/mK)`。
-- `--categorical`：一个或多个数字编码类别列，默认 `Saturated`；如果没有类别列，单独写 `--categorical`。
-- `--drop`：不参与生成的列，默认 `No.`；如果没有需要排除的列，单独写 `--drop`。
-- `--n-virtual`：生成数量，允许 0。
-- `--noise-ratio`：非负噪声比例，默认 0.01。
-- `--seed`：随机种子，默认 42；相同输入、参数及依赖环境可复现。
-- `--output`：新结果路径，已有文件会被拒绝覆盖。
+支持 mlp、svr、rf、gbdt、catboost、xgboost。默认逐步新增 25 条，最大总训练记录数 800。输出目录必须不存在，避免覆盖历史结果。完整说明见 [RUNNING.md](RUNNING.md)。
 
-比如改为预测硬度：`--target "Hardness(HRC)"`。此时热导率会成为输入特征，是否适合实际应用应根据预测时可获得的测量量决定。
+## 输入与结果
 
-## Python 调用
+`data/samples.tsv` 的 66 条记录与论文补充数据表逐值一致。原始数据保留三位小数；不自动替换目标。字段与来源说明见 [data/README.md](data/README.md)。
 
-从项目根目录运行：
+每次运行保存 metrics.csv、predictions.csv、comparisons.csv、config.json、summary.json、warnings.json 和 failures.json。逐条预测包含真实目标和样本编号，指标全部来自实际模型 predict；负 R² 不删除。comparisons.csv 比较预先指定的最终步骤与基线，不挑选最好测试结果。失败返回非零，并保存已完成折的记录。
 
-```python
-import pandas as pd
-from ndt_samples import generate_virtual_samples
+## 实验配置
 
-data = pd.read_csv('data/samples.tsv', sep='\t')
-X = data.drop(columns=['No.', 'TC(W/mK)'])
-y = data['TC(W/mK)']
-X_virtual, y_virtual = generate_virtual_samples(
-    X, y, n_virtual=100, noise_ratio=0.01,
-    categorical_columns=['Saturated'], random_state=42,
-)
+- configs/local.json：本地函数原样提取、保留渐进累积、MLP alpha×10 和随机 8:2 划分。源文件哈希见 configs/local_sources.json。固定参数采用论文表及本地范围/摘要；预处理移动到训练集内，不沿用测试集选最佳步骤、模拟预测和结果过滤。
+- configs/grouped.json：按化学成分组合代理试件组进行 5 折评估，使用类别约束改进生成器，训练内预处理、氧化物归一化及相同 MLP 正则化。这是后续改进实验，参数预先固定，不是嵌套调参。
+
+```powershell
+python run_experiment.py --model all --config configs/grouped.json --output runs/six_grouped
 ```
 
-接受 DataFrame 或二维数值数组；数组的类别列使用整数索引。目标接受一维数组、Series 或单列 DataFrame，按行位置对应，不自动按索引对齐。DataFrame 输入保留列名，并保留类别列的数据类型。
+原论文、本地不同版本与工程整理存在差异，当前版本不承诺重现发表的 R²=0.8065。所有未确认细节、兼容设置和保留行为见 RUNNING.md。使用测试曲线调整配置后，需要新的独立验证，不能仍把该曲线当作未参与选择的最终评估。
 
-## 算法及修复
+## 仅生成样本
 
-1. 按观测到的类别组合分组，按原始组频率随机选择生成组；不跨饱和状态混合。
-2. 在组内将连续特征标准化后计算欧氏距离，以逆密度概率选择基础样本。
-3. 从其他样本中选择最多两条邻居，使用 Dirichlet 权重插值连续特征与目标。组内只有一行时，输出该行的复制。
-4. 根据标准化协方差矩阵的特征分解，统一生成相关连续噪声，再还原尺度；常量列不加噪声。
-5. 将连续值与目标限制在各组原始最小、最大值之间，类别值保持不变。
+原有生成入口仍可用，依赖仅为 NumPy 和 pandas：
 
-修复了原脚本缺少导入、单特征相关矩阵报错、单行抽样失败、二维单列目标报错、空输出维度错误，以及类别变小数等问题。NumPy 可直接完成距离计算，因此无需 scikit-learn。此版本更改了采样策略，不会复现原脚本的数值输出。
+```powershell
+python -m pip install -r requirements.txt
+python -m ndt_samples --n-virtual 100 --seed 42 --output generated/new_samples.csv
+```
 
-范围裁剪和类别约束不等同于完整的物理约束：项目不会自动验证化学成分总和、测量单位或数据标注。输入数据保留原值，使用前请核实其科学含义。虚拟目标来自原始目标的插值，不能视为新的实验测量，也不能保证提高模型性能。
+此入口使用改进生成器。默认目标 TC(W/mK)、类别 Saturated、排除 No.。自定义参数见 `python -m ndt_samples --help`。
 
-训练评估时，请先按真实样本划分训练集和测试集，仅对训练集生成虚拟样本。交叉验证时每折分别生成；若干湿记录来自同一试件，应按试件分组划分，避免关联记录泄漏。全量生成命令只演示生成与导出，不执行模型评估。
-
-组内距离矩阵的时间和内存开销约为 O(n²)，适用于本例的小样本数据；大数据需改用分块距离或近邻索引。
-
-## 验证
+## 测试与范围
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-7 项测试覆盖单特征、单列目标、单行和常量、空输出、类别与分组边界、随机种子、全类别输入和无效输入。交付时在 Python 3.10.18、NumPy 1.23.5、pandas 2.3.2 环境通过，并使用真实数据完成 CLI 生成。依赖范围未逐版本测试。
-
-## 文件
-
-```text
-ndt_samples/       可导入模块及命令行入口
-data/samples.tsv   原 DATA 的表格内容，去除了首行说明 # DATA
-tests/             unittest 测试
-generated/         已生成的 100 条示例及验证摘要
-requirements.txt   NumPy、pandas 依赖
-```
-
-## 来源
-
-原仓库：https://github.com/gelatiao/NDT-virtual-sample-generation-framework
-
-- 原代码文件：`def generate virtual sample`，blob SHA `4851c9742898659773b5dded58fd20cc499cc23b`。
-- 原数据文件：`DATA`，blob SHA `04f328ace8155bf0d24faaebc0ab56d43433bad3`。
-- 本项目由原始脚本整理为可运行模块；根目录原始 `DATA` 和 `def generate virtual sample` 保留作参考，运行请使用 `ndt_samples`。原仓库根目录未包含许可证文件，未擅自补充授权条款。
+测试覆盖生成器边界、分组隔离、训练内缩放、可复现渐进训练、真实预测指标、RF 改进路径及无效配置。虚拟数据不是独立测量，增强效果应通过真实测试验证。SHAP、全量网格搜索、所有论文图表和模型部署不属于本轮迁移范围。没有给原研究擅自添加许可证。

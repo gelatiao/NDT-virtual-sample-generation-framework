@@ -1,0 +1,36 @@
+[
+  {
+    "run": "local_verified",
+    "models": [
+      "catboost",
+      "gbdt",
+      "mlp",
+      "rf",
+      "svr",
+      "xgboost"
+    ],
+    "stages": 186,
+    "prediction_rows": 12276,
+    "failed_folds": 0,
+    "model_warning_count": 0,
+    "negative_test_R2_count": 0,
+    "max_total_training_rows": 800
+  },
+  {
+    "run": "grouped_verified",
+    "models": [
+      "catboost",
+      "gbdt",
+      "mlp",
+      "rf",
+      "svr",
+      "xgboost"
+    ],
+    "stages": 60,
+    "prediction_rows": 3960,
+    "failed_folds": 0,
+    "model_warning_count": 0,
+    "negative_test_R2_count": 5,
+    "max_total_training_rows": 60
+  }
+]

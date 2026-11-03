@@ -1,0 +1,56 @@
+[
+  {
+    "model": "mlp",
+    "source_file": "多层感知机数据增强MLP.py",
+    "sha256": "99f8081ce1753ebcd1b8f415cd706ca07d1aefb42eedac1e7728b097bc740884",
+    "generator_lines": [
+      38,
+      84
+    ]
+  },
+  {
+    "model": "rf",
+    "source_file": "随机森林数据增强.py",
+    "sha256": "81c237fa6a7111b28ece46ae074f6742c7f8958f8f9a39cdb979dbab1c365a71",
+    "generator_lines": [
+      27,
+      113
+    ]
+  },
+  {
+    "model": "svr",
+    "source_file": "SVM数据增强.py",
+    "sha256": "defccb65fec578d4b31f12fefa1e9e34cb58de7acdf6a6f260b3259c335a091f",
+    "generator_lines": [
+      24,
+      109
+    ]
+  },
+  {
+    "model": "gbdt",
+    "source_file": "GBDT数据增强.py",
+    "sha256": "813441ce75787fec902fde6bd830737afe9a6294ce8fc06ccae0261ed4159ccb",
+    "generator_lines": [
+      93,
+      178
+    ]
+  },
+  {
+    "model": "catboost",
+    "source_file": "catboot数据增强.py",
+    "sha256": "7f8b751456b949c86af19d43361c04f1f05971038cb21d2c98b58bd1a2b93131",
+    "generator_lines": [
+      46,
+      131
+    ]
+  },
+  {
+    "model": "xgboost",
+    "source_file": "XGboost数据增强.py",
+    "sha256": "ef8ed82d497cdcd9c82cae2c9873ca255deacc2844475d5f5f77801ed308e14e",
+    "generator_lines": [
+      47,
+      132
+    ]
+  }
+]
